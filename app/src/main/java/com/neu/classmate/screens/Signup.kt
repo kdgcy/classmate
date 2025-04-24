@@ -17,28 +17,37 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.neu.classmate.AppUtil
+import com.neu.classmate.viewmodel.AuthViewModel
 
 @Composable
-fun Signup(modifier: Modifier = Modifier, navController: NavHostController) {
+fun Signup(modifier: Modifier = Modifier, navController: NavHostController,authViewModel: AuthViewModel = viewModel()) {
 
-    var name by remember {
+    var email by remember {
         mutableStateOf("")
     }
 
-    var email by remember {
+    var name by remember {
         mutableStateOf("")
     }
 
     var password by remember {
         mutableStateOf("")
     }
+
+    var isLoading by remember {
+        mutableStateOf(false)
+    }
+
+    var context = LocalContext.current
 
     Column(
         modifier = modifier.fillMaxSize().padding(31.dp),
@@ -66,12 +75,12 @@ fun Signup(modifier: Modifier = Modifier, navController: NavHostController) {
         Spacer(modifier= Modifier.height(20.dp))
 
         OutlinedTextField(
-            value = name,
+            value = email,
             onValueChange = {
-                name = it
+                email = it
             },
             label = {
-                Text(text = "Name")
+                Text(text = "Full name")
             },
             modifier = Modifier.fillMaxWidth()
         )
@@ -79,9 +88,9 @@ fun Signup(modifier: Modifier = Modifier, navController: NavHostController) {
         Spacer(modifier= Modifier.height(10.dp))
 
         OutlinedTextField(
-            value = email,
+            value = name,
             onValueChange = {
-                email = it
+                name = it
             },
             label = {
                 Text(text = "Email")
@@ -106,12 +115,24 @@ fun Signup(modifier: Modifier = Modifier, navController: NavHostController) {
         Spacer(modifier = Modifier.height(10.dp))
 
         Button(onClick = {
-            //
+            isLoading = true
+            authViewModel.signup(name, email, password){success,errorMessage->
+                if(success){
+                    isLoading = false
+                    navController.navigate(Routes.HomeScreen){
+                        popUpTo(Routes.AuthScreen){inclusive=true}
+                    }
+                }else{
+                    isLoading = false
+                    AppUtil.showToast(context,errorMessage?:"Something went wrong")
+                }
+            }
         },
+            enabled = !isLoading,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(60.dp)) {
-            Text(text = "Sign up")
+            Text(text = if(isLoading)"Creating Accouont" else "Sign up")
         }
     }
 }

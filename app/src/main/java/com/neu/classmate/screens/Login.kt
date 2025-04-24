@@ -17,15 +17,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.neu.classmate.AppUtil
+import com.neu.classmate.viewmodel.AuthViewModel
 
 @Composable
-fun Login(modifier: Modifier = Modifier, navController: NavHostController){
+fun Login(modifier: Modifier = Modifier, navController: NavHostController, authViewModel: AuthViewModel = viewModel()){
 
     var email by remember {
         mutableStateOf("")
@@ -34,6 +38,12 @@ fun Login(modifier: Modifier = Modifier, navController: NavHostController){
     var password by remember {
         mutableStateOf("")
     }
+
+    var isLoading by remember {
+        mutableStateOf(false)
+    }
+
+    var context = LocalContext.current
 
     Column(
         modifier = modifier.fillMaxSize().padding(31.dp),
@@ -88,12 +98,24 @@ fun Login(modifier: Modifier = Modifier, navController: NavHostController){
         Spacer(modifier = Modifier.height(10.dp))
 
         Button(onClick = {
-            //
+            isLoading = true
+            authViewModel.login(email, password){success,errorMessage->
+                if(success){
+                    isLoading = false
+                    navController.navigate(Routes.HomeScreen){
+                        popUpTo(Routes.AuthScreen){inclusive=true}
+                    }
+                }else{
+                    isLoading = false
+                    AppUtil.showToast(context,errorMessage?:"Something went wrong")
+                }
+            }
         },
+            enabled = !isLoading,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(60.dp)) {
-            Text(text = "Login")
+            Text(text = if(isLoading)"Logging in" else "Login")
         }
     }
 }
