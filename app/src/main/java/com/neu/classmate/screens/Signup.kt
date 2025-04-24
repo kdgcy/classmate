@@ -43,6 +43,10 @@ fun Signup(modifier: Modifier = Modifier, navController: NavHostController,authV
         mutableStateOf("")
     }
 
+    var isLoading by remember {
+        mutableStateOf(false)
+    }
+
     var context = LocalContext.current
 
     Column(
@@ -111,18 +115,24 @@ fun Signup(modifier: Modifier = Modifier, navController: NavHostController,authV
         Spacer(modifier = Modifier.height(10.dp))
 
         Button(onClick = {
+            isLoading = true
             authViewModel.signup(name, email, password){success,errorMessage->
                 if(success){
-
+                    isLoading = false
+                    navController.navigate(Routes.HomeScreen){
+                        popUpTo(Routes.AuthScreen){inclusive=true}
+                    }
                 }else{
+                    isLoading = false
                     AppUtil.showToast(context,errorMessage?:"Something went wrong")
                 }
             }
         },
+            enabled = !isLoading,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(60.dp)) {
-            Text(text = "Sign up")
+            Text(text = if(isLoading)"Creating Accouont" else "Sign up")
         }
     }
 }

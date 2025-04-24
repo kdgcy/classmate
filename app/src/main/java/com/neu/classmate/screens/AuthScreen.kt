@@ -55,7 +55,7 @@ fun AuthScreen(modifier: Modifier = Modifier, navController: NavHostController){
         },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp)) {
+                .height(70.dp)) {
             Text(text = "Login")
         }
 
@@ -66,7 +66,7 @@ fun AuthScreen(modifier: Modifier = Modifier, navController: NavHostController){
         },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp)) {
+                .height(70.dp)) {
             Text(text = "Sign up")
         }
     }

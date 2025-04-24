@@ -4,4 +4,5 @@ object Routes {
    var AuthScreen = "auth"
    var Login = "login"
    var Signup = "signup"
+   var HomeScreen = "home"
 }
