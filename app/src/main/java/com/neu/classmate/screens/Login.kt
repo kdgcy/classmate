@@ -78,7 +78,8 @@ fun Login(modifier: Modifier = Modifier, navController: NavHostController, authV
             label = {
                 Text(text = "Email")
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
         )
 
         Spacer(modifier= Modifier.height(10.dp))
@@ -92,7 +93,8 @@ fun Login(modifier: Modifier = Modifier, navController: NavHostController, authV
                 Text(text = "Password")
             },
             modifier = Modifier.fillMaxWidth(),
-            visualTransformation = PasswordVisualTransformation()
+            visualTransformation = PasswordVisualTransformation(),
+            singleLine = true
         )
 
         Spacer(modifier = Modifier.height(10.dp))
