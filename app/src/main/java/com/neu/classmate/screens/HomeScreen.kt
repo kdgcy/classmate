@@ -13,8 +13,7 @@ import com.neu.classmate.components.HeaderView
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) {
-    Column(
-    ) {
+    Column{
         HeaderView(modifier,navController)
 
         LazyColumn(
