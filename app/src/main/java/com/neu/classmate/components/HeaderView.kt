@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.rounded.AccountCircle
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -37,7 +36,10 @@ import com.google.firebase.ktx.Firebase
 import com.neu.classmate.screens.Routes
 
 @Composable
-fun HeaderView(modifier: Modifier = Modifier, navController: NavHostController) {
+fun HeaderView(
+    modifier: Modifier = Modifier,
+    navController: NavHostController
+) {
     // Get user's name from Firestore
     var name by remember { mutableStateOf("") }
 
@@ -92,17 +94,6 @@ fun HeaderView(modifier: Modifier = Modifier, navController: NavHostController) 
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
-                DropdownMenuItem(
-                    leadingIcon = {
-                        Icon(Icons.Rounded.Add,
-                            contentDescription = null)
-                                  },
-                    text = { Text("Add Task") },
-                    onClick = {
-                        expanded = false
-                        navController.navigate(Routes.TaskScreen)
-                    }
-                )
                 DropdownMenuItem(
                     leadingIcon = {
                         Icon(Icons.Rounded.AccountCircle,
