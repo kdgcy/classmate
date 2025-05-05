@@ -5,5 +5,4 @@ object Routes {
    var Login = "login"
    var Signup = "signup"
    var HomeScreen = "home"
-   var TaskScreen = "task"
 }
