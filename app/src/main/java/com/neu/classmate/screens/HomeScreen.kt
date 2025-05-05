@@ -1,37 +1,21 @@
 package com.neu.classmate.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import android.util.Log
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.neu.classmate.components.HeaderView
-
-//
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ktx.toObject
+import com.google.firebase.firestore.Query
+import com.neu.classmate.components.HeaderView
 import kotlinx.coroutines.tasks.await
 
 @Composable
@@ -42,19 +26,29 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
     var taskList by remember { mutableStateOf(listOf<String>()) }
     var showDialog by remember { mutableStateOf(false) }
     var taskText by remember { mutableStateOf("") }
+    var refreshTrigger by remember { mutableStateOf(false) } //trigger to refresh
 
-    // 🔄 Load tasks once
-    LaunchedEffect(Unit) {
-        val snapshot = db.collection("users")
-            .document(userId)
-            .collection("tasks")
-            .get()
-            .await()
+    suspend fun loadTasks() {
+        try {
+            val snapshot = db.collection("users")
+                .document(userId)
+                .collection("tasks")
+                .orderBy("createdAt", Query.Direction.ASCENDING)
+                .get()
+                .await()
 
-        taskList = snapshot.documents.mapNotNull { it.getString("title") }
+            taskList = snapshot.documents.mapNotNull { it.getString("title") }
+        } catch (e: Exception) {
+            Log.e("Firestore", "Error fetching tasks", e)
+        }
     }
 
-    Column {
+    // Refresh tasks when trigger changes
+    LaunchedEffect(refreshTrigger) {
+        loadTasks()
+    }
+
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         HeaderView(modifier, navController)
 
         Button(
@@ -66,15 +60,19 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
             Text(text = "Add new task")
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+
         LazyColumn(
-            modifier = Modifier
-                .padding(top = 32.dp)
-                .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(16.dp)
+            contentPadding = PaddingValues(8.dp)
         ) {
             items(taskList) { task ->
-                Card(modifier = Modifier.fillMaxWidth()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
                     Text(
                         text = task,
                         modifier = Modifier
@@ -104,15 +102,21 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                 confirmButton = {
                     TextButton(onClick = {
                         if (taskText.isNotBlank()) {
-                            val newTask = hashMapOf("title" to taskText)
+                            val newTask = hashMapOf(
+                                "title" to taskText,
+                                "createdAt" to FieldValue.serverTimestamp()
+                            )
                             db.collection("users")
                                 .document(userId)
                                 .collection("tasks")
                                 .add(newTask)
                                 .addOnSuccessListener {
-                                    taskList = taskList + taskText
                                     showDialog = false
-                                    taskText = ""
+                                    taskText = "" // trigger refresh
+                                    refreshTrigger = !refreshTrigger
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.e("Firestore", "Error adding task", e)
                                 }
                         }
                     }) {
@@ -131,6 +135,4 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
         }
     }
 }
-
-
 
