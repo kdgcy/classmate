@@ -26,12 +26,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.neu.classmate.components.HeaderView
-
-//
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ktx.toObject
+import com.neu.classmate.components.HeaderView
 import kotlinx.coroutines.tasks.await
 
 @Composable
@@ -43,7 +40,7 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
     var showDialog by remember { mutableStateOf(false) }
     var taskText by remember { mutableStateOf("") }
 
-    // 🔄 Load tasks once
+    //Load tasks once
     LaunchedEffect(Unit) {
         val snapshot = db.collection("users")
             .document(userId)
