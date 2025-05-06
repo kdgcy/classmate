@@ -1,6 +1,7 @@
 package com.neu.classmate.components
 
 import android.app.DatePickerDialog
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -81,7 +84,25 @@ fun TaskView(taskTitle: String) {
         // Save Button
         Button(
             onClick = {
-                // TODO: Save to Firebase or local
+                val userId = FirebaseAuth.getInstance().currentUser?.uid
+                if (userId != null && dueDate.isNotBlank()) {
+                    val db = FirebaseFirestore.getInstance()
+
+                    db.collection("users")
+                        .document(userId)
+                        .collection("tasks")
+                        .whereEqualTo("title", taskTitle)
+                        .get()
+                        .addOnSuccessListener { querySnapshot ->
+                            if (!querySnapshot.isEmpty) {
+                                val taskDoc = querySnapshot.documents[0].reference
+                                taskDoc.update("dueDate", dueDate)
+                            }
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("Firestore", "Error updating due date", e)
+                        }
+                }
             },
             modifier = Modifier.align(Alignment.End)
         ) {
