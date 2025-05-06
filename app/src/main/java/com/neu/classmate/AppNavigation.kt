@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import com.neu.classmate.components.TaskView
 import com.neu.classmate.screens.AuthScreen
 import com.neu.classmate.screens.HomeScreen
 import com.neu.classmate.screens.Login
@@ -33,6 +34,10 @@ fun AppNavigation(modifier: Modifier = Modifier){
         }
         composable(Routes.HomeScreen) {
             HomeScreen(modifier,navController)
+        }
+        composable("task_view/{taskTitle}") { backStackEntry ->
+            val taskTitle = backStackEntry.arguments?.getString("taskTitle") ?: ""
+            TaskView(taskTitle)
         }
     }
 }
