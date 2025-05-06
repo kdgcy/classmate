@@ -27,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,39 +38,49 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.neu.classmate.components.HeaderView
 import kotlinx.coroutines.tasks.await
+import java.text.SimpleDateFormat
+import java.util.Locale
+
+data class Task(val title: String, val createdAt: String)
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) {
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
     val db = FirebaseFirestore.getInstance()
 
-    var taskList by remember { mutableStateOf(listOf<String>()) }
+    var taskList by remember { mutableStateOf(listOf<Task>()) }
     var showDialog by remember { mutableStateOf(false) }
     var taskText by remember { mutableStateOf("") }
-    var refreshTrigger by remember { mutableStateOf(false) } //trigger to refresh
+    var refreshTrigger by remember { mutableStateOf(false) }
 
     suspend fun loadTasks() {
         try {
             val snapshot = db.collection("users")
                 .document(userId)
                 .collection("tasks")
-                .orderBy("createdAt", Query.Direction.ASCENDING)
+                .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .await()
 
-            taskList = snapshot.documents.mapNotNull { it.getString("title") }
+            val formatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+            taskList = snapshot.documents.mapNotNull { doc ->
+                val title = doc.getString("title")
+                val timestamp = doc.getTimestamp("createdAt")?.toDate()
+                if (title != null && timestamp != null) {
+                    Task(title, formatter.format(timestamp))
+                } else null
+            }
         } catch (e: Exception) {
             Log.e("Firestore", "Error fetching tasks", e)
         }
     }
 
-    // Refresh tasks when trigger changes
     LaunchedEffect(refreshTrigger) {
         loadTasks()
     }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        HeaderView(modifier, navController)
+        HeaderView(modifier,navController)
 
         Button(
             onClick = { showDialog = true },
@@ -92,17 +103,21 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                         .fillMaxWidth()
                         .padding(horizontal = 4.dp)
                         .clickable {
-                            navController.navigate("task_view/${Uri.encode(task)}")
+                            navController.navigate("task_view/${Uri.encode(task.title)}")
                         },
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Text(
-                        text = task,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        style = TextStyle(fontSize = 16.sp)
-                    )
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = task.title,
+                            style = TextStyle(fontSize = 16.sp)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = task.createdAt,
+                            style = TextStyle(fontSize = 12.sp, color = Color.Gray)
+                        )
+                    }
                 }
             }
         }
@@ -135,7 +150,7 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                                 .add(newTask)
                                 .addOnSuccessListener {
                                     showDialog = false
-                                    taskText = "" // trigger refresh
+                                    taskText = ""
                                     refreshTrigger = !refreshTrigger
                                 }
                                 .addOnFailureListener { e ->
@@ -158,4 +173,3 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
         }
     }
 }
-
