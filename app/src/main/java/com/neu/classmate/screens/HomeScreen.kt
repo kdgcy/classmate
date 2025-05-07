@@ -71,7 +71,7 @@ fun HomeScreen(modifier: Modifier, navController: NavHostController) {
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet(modifier = Modifier.fillMaxWidth(0.75F)) {
+            ModalDrawerSheet(modifier = Modifier.fillMaxWidth(0.7F)) {
                 Box(modifier = Modifier.fillMaxHeight()) {
                     // Top content
                     Column(
@@ -121,7 +121,9 @@ fun HomeScreen(modifier: Modifier, navController: NavHostController) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable {}
+                                .clickable {
+                                    navController.navigate(Routes.FocusTimer)
+                                }
                                 .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
