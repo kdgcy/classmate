@@ -1,9 +1,11 @@
 package com.neu.classmate.screens
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -70,77 +72,91 @@ fun HomeScreen(modifier: Modifier, navController: NavHostController) {
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet(modifier = Modifier.fillMaxWidth(0.75F)) {
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(16.dp)
-                )
+                Box(modifier = Modifier.fillMaxHeight()) {
+                    // Top content
+                    Column(
+                        modifier = Modifier.align(Alignment.TopStart)
+                    ) {
+                        Text(
+                            text = name,
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.padding(16.dp)
+                        )
 
-                HorizontalDivider()
-                //Profile
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {}
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.AccountCircle,
-                        contentDescription = "Profile Icon"
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text("Profile")
-                }
-                //Calendar
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {}
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.CalendarMonth,
-                        contentDescription = "Calendar"
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text("Calendar")
-                }
-                //Focus Timer
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {}
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Timer,
-                        contentDescription = "Timer"
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text("Focus Timer")
-                }
+                        HorizontalDivider()
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            Firebase.auth.signOut()
-                            navController.navigate(Routes.AuthScreen){popUpTo(Routes.HomeScreen){inclusive=true} }
+                        // Profile
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {}
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.AccountCircle,
+                                contentDescription = "Profile Icon"
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text("Profile")
                         }
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Logout,
-                        contentDescription = "Logout Icon"
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text("Logout")
+
+                        // Calendar
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {}
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.CalendarMonth,
+                                contentDescription = "Calendar"
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text("Calendar")
+                        }
+
+                        // Focus Timer
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {}
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Timer,
+                                contentDescription = "Timer"
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text("Focus Timer")
+                        }
+                    }
+
+                    // Bottom Logout
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .fillMaxWidth()
+                            .clickable {
+                                Firebase.auth.signOut()
+                                navController.navigate(Routes.AuthScreen) {
+                                    popUpTo(Routes.HomeScreen) { inclusive = true }
+                                }
+                            }
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Logout,
+                            contentDescription = "Logout Icon"
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text("Logout")
+                    }
                 }
-            }//ModalDrawerSheet END
+            }
         }//DrawerContent END
 
     ) {
