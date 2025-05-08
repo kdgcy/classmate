@@ -50,7 +50,7 @@ fun AppNavigation(modifier: Modifier = Modifier){
         ) { backStackEntry ->
             val title = backStackEntry.arguments?.getString("title") ?: ""
             val dueDate = backStackEntry.arguments?.getString("dueDate") ?: ""
-            TaskView(title, dueDate) // 👈 Update your TaskView to accept these parameters
+            TaskView(title, dueDate)
         }
     }
 }
