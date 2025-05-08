@@ -42,15 +42,17 @@ fun AppNavigation(modifier: Modifier = Modifier){
             FocusTimer(modifier,navController)
         }
         composable(
-            "task_view/{title}/{dueDate}",
+            "task_view/{taskId}/{title}/{dueDate}",
             arguments = listOf(
+                navArgument("taskId") { type = NavType.StringType },
                 navArgument("title") { type = NavType.StringType },
                 navArgument("dueDate") { type = NavType.StringType }
             )
         ) { backStackEntry ->
+            val taskId = backStackEntry.arguments?.getString("taskId") ?: ""
             val title = backStackEntry.arguments?.getString("title") ?: ""
             val dueDate = backStackEntry.arguments?.getString("dueDate") ?: ""
-            TaskView(title, dueDate)
+            TaskView(taskId, title, dueDate, navController) // ✅ All 3 parameters passed
         }
     }
 }

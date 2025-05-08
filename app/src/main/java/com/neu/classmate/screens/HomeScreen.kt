@@ -64,7 +64,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
-data class TaskItem(val title: String, val dueDate: String)
+data class TaskItem(val id: String, val title: String, val dueDate: String)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,7 +94,7 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                 taskList = result.documents.mapNotNull { doc ->
                     val title = doc.getString("title") ?: return@mapNotNull null
                     val dueDate = doc.getString("dueDate") ?: "No due date"
-                    TaskItem(title, dueDate)
+                    TaskItem(doc.id, title, dueDate)
                 }
             }
     }
@@ -195,7 +195,7 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                                     .clickable {
                                         val encodedTitle = Uri.encode(task.title)
                                         val encodedDue = Uri.encode(task.dueDate)
-                                        navController.navigate("task_view/$encodedTitle/$encodedDue")
+                                        navController.navigate("task_view/${task.id}/$encodedTitle/$encodedDue")
                                     }
                                     .padding(horizontal = 4.dp),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
