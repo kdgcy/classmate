@@ -1,57 +1,33 @@
 package com.neu.classmate.components
 
-import android.app.DatePickerDialog
-import android.util.Log
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
 
 
 @Composable
-fun TaskView(taskTitle: String) {
-
-    var dueDate by remember { mutableStateOf("") }
-
-    val context = LocalContext.current
-    val calendar = Calendar.getInstance()
-    val dateFormatter = remember { SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()) }
+fun TaskView(title: String, dueDate: String) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Top
+            .padding(16.dp)
     ) {
-
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = taskTitle,
+            value = title,
             onValueChange = {},
-            modifier = Modifier.fillMaxWidth(),
             readOnly = true,
-            label = { Text("Task Title") }
+            label = { Text("Task Title") },
+            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -59,57 +35,9 @@ fun TaskView(taskTitle: String) {
         OutlinedTextField(
             value = dueDate,
             onValueChange = {},
-            label = { Text("Due Date") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    // Show Date Picker dialog when clicked
-                    DatePickerDialog(
-                        context,
-                        { _, year, month, dayOfMonth ->
-                            calendar.set(year, month, dayOfMonth)
-                            dueDate = dateFormatter.format(calendar.time)
-                        },
-                        calendar.get(Calendar.YEAR),
-                        calendar.get(Calendar.MONTH),
-                        calendar.get(Calendar.DAY_OF_MONTH)
-                    ).show()
-                },
             readOnly = true,
-            enabled = false
+            label = { Text("Due Date") },
+            modifier = Modifier.fillMaxWidth()
         )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // Save Button
-        Button(
-            onClick = {
-                val userId = FirebaseAuth.getInstance().currentUser?.uid
-                if (userId != null && dueDate.isNotBlank()) {
-                    val db = FirebaseFirestore.getInstance()
-
-                    db.collection("users")
-                        .document(userId)
-                        .collection("tasks")
-                        .whereEqualTo("title", taskTitle)
-                        .get()
-                        .addOnSuccessListener { querySnapshot ->
-                            if (!querySnapshot.isEmpty) {
-                                val taskDoc = querySnapshot.documents[0].reference
-                                taskDoc.update("dueDate", dueDate)
-                            }
-                        }
-                        .addOnFailureListener { e ->
-                            Log.e("Firestore", "Error updating due date", e)
-                        }
-                }
-            },
-            modifier = Modifier.align(Alignment.End)
-        ) {
-            Text("Save Task")
-        }
-
     }
 }
-
-
