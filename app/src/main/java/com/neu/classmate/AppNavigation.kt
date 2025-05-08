@@ -52,7 +52,8 @@ fun AppNavigation(modifier: Modifier = Modifier){
             val taskId = backStackEntry.arguments?.getString("taskId") ?: ""
             val title = backStackEntry.arguments?.getString("title") ?: ""
             val dueDate = backStackEntry.arguments?.getString("dueDate") ?: ""
-            TaskView(taskId, title, dueDate, navController) // ✅ All 3 parameters passed
+
+            TaskView(taskId = taskId, title = title, dueDate = dueDate, navController = navController)
         }
     }
 }
