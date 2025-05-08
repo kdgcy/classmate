@@ -6,4 +6,5 @@ object Routes {
    var Signup = "signup"
    var HomeScreen = "home"
    var TaskView = "taskview"
+   var FocusTimer = "pokus"
 }
