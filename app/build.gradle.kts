@@ -62,6 +62,8 @@ dependencies {
 
     implementation("androidx.compose.material:material-icons-extended")
 
+    implementation("com.kizitonwose.calendar:compose:2.3.0")
+
     val nav_version = "2.8.9"
     implementation("androidx.navigation:navigation-compose:$nav_version")
 }

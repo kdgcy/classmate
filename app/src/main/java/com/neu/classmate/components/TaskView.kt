@@ -7,7 +7,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -175,7 +174,7 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
                 } else {
                     Text(
                         text = "No subtasks yet.",
-                        modifier = Modifier.alpha(0.6f), // 60% opacity
+                        modifier = Modifier.alpha(0.6f),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Spacer(modifier = Modifier.height(16.dp))
@@ -216,6 +215,35 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
                             }
                         }
                     }
+                }
+
+                // 🚨 Add this block to make Delete Task work
+                if (showDeleteDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showDeleteDialog = false },
+                        title = { Text("Delete Task?") },
+                        text = { Text("Are you sure you want to permanently delete this task?") },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                showDeleteDialog = false
+                                db.collection("users")
+                                    .document(userId)
+                                    .collection("tasks")
+                                    .document(taskId)
+                                    .delete()
+                                    .addOnSuccessListener {
+                                        navController.popBackStack()
+                                    }
+                            }) {
+                                Text("Delete")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDeleteDialog = false }) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
                 }
             }
         }
