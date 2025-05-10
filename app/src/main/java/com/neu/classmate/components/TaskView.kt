@@ -7,9 +7,11 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
@@ -19,6 +21,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 
+// Data model
 data class Subtask(val title: String, val done: Boolean = false)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,12 +33,12 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
     var showMenu by remember { mutableStateOf(false) }
     var showSubtaskInput by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
-
     var newSubtask by remember { mutableStateOf("") }
-    var subtasks by remember { mutableStateOf(listOf<Subtask>()) }
+    val subtasks = remember { mutableStateListOf<Subtask>() }
 
     var listenerRegistration: ListenerRegistration? = remember { null }
 
+    // Real-time listener with null-safety
     LaunchedEffect(Unit) {
         listenerRegistration?.remove()
         listenerRegistration = db.collection("users")
@@ -43,25 +46,27 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
             .collection("tasks")
             .document(taskId)
             .addSnapshotListener { snapshot, _ ->
-                snapshot?.let { document ->
-                    val list = document.get("subtasks") as? List<Map<String, Any>>
-                    subtasks = list?.mapNotNull {
-                        val title = it["title"] as? String ?: return@mapNotNull null
-                        val done = it["done"] as? Boolean ?: false
-                        Subtask(title, done)
-                    } ?: emptyList()
+                val list = snapshot?.get("subtasks") as? List<*> ?: return@addSnapshotListener
+                subtasks.clear()
+                list.mapNotNullTo(subtasks) { item ->
+                    val map = item as? Map<*, *> ?: return@mapNotNullTo null
+                    val title = map["title"] as? String ?: return@mapNotNullTo null
+                    val done = map["done"] as? Boolean ?: false
+                    Subtask(title, done)
                 }
             }
     }
 
     DisposableEffect(Unit) {
-        onDispose {
-            listenerRegistration?.remove()
-        }
+        onDispose { listenerRegistration?.remove() }
     }
 
-    val completedCount = subtasks.count { it.done }
-    val progress = if (subtasks.isNotEmpty()) completedCount / subtasks.size.toFloat() else 0f
+    // Reactive progress calculation
+    val progress by remember(subtasks) {
+        derivedStateOf {
+            if (subtasks.isNotEmpty()) subtasks.count { it.done } / subtasks.size.toFloat() else 0f
+        }
+    }
 
     fun updateSubtasks(newList: List<Subtask>) {
         val data = newList.map { mapOf("title" to it.title, "done" to it.done) }
@@ -146,8 +151,8 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
                         trailingIcon = {
                             IconButton(onClick = {
                                 if (newSubtask.isNotBlank()) {
-                                    val updatedSubtasks = subtasks + Subtask(newSubtask, false)
-                                    updateSubtasks(updatedSubtasks)
+                                    val updated = subtasks.toList() + Subtask(newSubtask, false)
+                                    updateSubtasks(updated)
                                     newSubtask = ""
                                 }
                             }) {
@@ -162,7 +167,17 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
 
                 if (subtasks.isNotEmpty()) {
                     Text("${(progress * 100).toInt()}% Complete", style = MaterialTheme.typography.labelLarge)
-                    LinearProgressIndicator(progress = progress, modifier = Modifier.fillMaxWidth())
+                    LinearProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                } else {
+                    Text(
+                        text = "No subtasks yet.",
+                        modifier = Modifier.alpha(0.6f), // 60% opacity
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
