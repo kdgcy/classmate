@@ -19,8 +19,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 
-
-
 data class Subtask(val title: String, val done: Boolean = false)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,6 +58,23 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
         onDispose {
             listenerRegistration?.remove()
         }
+    }
+
+    val completedCount = subtasks.count { it.done }
+    val progress = if (subtasks.isNotEmpty()) completedCount / subtasks.size.toFloat() else 0f
+
+    fun updateSubtasks(newList: List<Subtask>) {
+        val data = newList.map { mapOf("title" to it.title, "done" to it.done) }
+        val progressMap = mapOf("completed" to newList.count { it.done }, "total" to newList.size)
+
+        db.collection("users")
+            .document(userId)
+            .collection("tasks")
+            .document(taskId)
+            .update(mapOf(
+                "subtasks" to data,
+                "progress" to progressMap
+            ))
     }
 
     Scaffold(
@@ -123,9 +138,6 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
                 Spacer(modifier = Modifier.height(20.dp))
 
                 if (showSubtaskInput) {
-                    Text("Subtasks", style = MaterialTheme.typography.titleMedium)
-                    Spacer(modifier = Modifier.height(8.dp))
-
                     OutlinedTextField(
                         value = newSubtask,
                         onValueChange = { newSubtask = it },
@@ -135,14 +147,8 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
                             IconButton(onClick = {
                                 if (newSubtask.isNotBlank()) {
                                     val updatedSubtasks = subtasks + Subtask(newSubtask, false)
-                                    val data = updatedSubtasks.map { mapOf("title" to it.title, "done" to it.done) }
-
-                                    db.collection("users")
-                                        .document(userId)
-                                        .collection("tasks")
-                                        .document(taskId)
-                                        .update("subtasks", data)
-                                        .addOnSuccessListener { newSubtask = "" }
+                                    updateSubtasks(updatedSubtasks)
+                                    newSubtask = ""
                                 }
                             }) {
                                 Icon(Icons.Default.Add, contentDescription = "Add")
@@ -151,8 +157,13 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
                         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
                         modifier = Modifier.fillMaxWidth()
                     )
-
                     Spacer(modifier = Modifier.height(20.dp))
+                }
+
+                if (subtasks.isNotEmpty()) {
+                    Text("${(progress * 100).toInt()}% Complete", style = MaterialTheme.typography.labelLarge)
+                    LinearProgressIndicator(progress = progress, modifier = Modifier.fillMaxWidth())
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
 
                 subtasks.forEachIndexed { index, subtask ->
@@ -160,26 +171,18 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 6.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                        shape = MaterialTheme.shapes.medium
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 10.dp)
+                            modifier = Modifier.padding(12.dp)
                         ) {
                             Checkbox(
                                 checked = subtask.done,
                                 onCheckedChange = { isChecked ->
                                     val updated = subtasks.toMutableList()
                                     updated[index] = updated[index].copy(done = isChecked)
-                                    val data = updated.map { mapOf("title" to it.title, "done" to it.done) }
-                                    db.collection("users")
-                                        .document(userId)
-                                        .collection("tasks")
-                                        .document(taskId)
-                                        .update("subtasks", data)
+                                    updateSubtasks(updated)
                                 }
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -192,45 +195,12 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
                             )
                             IconButton(onClick = {
                                 val updated = subtasks.toMutableList().apply { removeAt(index) }
-                                val data = updated.map { mapOf("title" to it.title, "done" to it.done) }
-                                db.collection("users")
-                                    .document(userId)
-                                    .collection("tasks")
-                                    .document(taskId)
-                                    .update("subtasks", data)
+                                updateSubtasks(updated)
                             }) {
                                 Icon(Icons.Default.Delete, contentDescription = "Delete Subtask")
                             }
                         }
                     }
-                }
-
-                if (showDeleteDialog) {
-                    AlertDialog(
-                        onDismissRequest = { showDeleteDialog = false },
-                        title = { Text("Delete Task?") },
-                        text = { Text("Are you sure you want to permanently delete this task?") },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                showDeleteDialog = false
-                                db.collection("users")
-                                    .document(userId)
-                                    .collection("tasks")
-                                    .document(taskId)
-                                    .delete()
-                                    .addOnSuccessListener {
-                                        navController.popBackStack()
-                                    }
-                            }) {
-                                Text("Delete")
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showDeleteDialog = false }) {
-                                Text("Cancel")
-                            }
-                        }
-                    )
                 }
             }
         }

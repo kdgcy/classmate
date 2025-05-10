@@ -1,54 +1,17 @@
 package com.neu.classmate.screens
 
-
 import android.app.DatePickerDialog
 import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberDrawerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -61,10 +24,14 @@ import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
+import java.util.*
 
-data class TaskItem(val id: String, val title: String, val dueDate: String)
+data class TaskItem(
+    val id: String,
+    val title: String,
+    val dueDate: String,
+    val percentComplete: Float = 0f
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,7 +61,12 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                 taskList = result.documents.mapNotNull { doc ->
                     val title = doc.getString("title") ?: return@mapNotNull null
                     val dueDate = doc.getString("dueDate") ?: "No due date"
-                    TaskItem(doc.id, title, dueDate)
+                    val subtasks = doc.get("subtasks") as? List<Map<String, Any>> ?: emptyList()
+                    val total = subtasks.size
+                    val completed = subtasks.count { it["done"] == true }
+                    val percentComplete = if (total > 0) completed.toFloat() / total else 0f
+
+                    TaskItem(doc.id, title, dueDate, percentComplete)
                 }
             }
     }
@@ -112,19 +84,22 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet(modifier = Modifier.fillMaxWidth(0.7F)) {
+            ModalDrawerSheet(modifier = Modifier.fillMaxWidth(0.7f)) {
                 Box(modifier = Modifier.fillMaxHeight()) {
                     Column(modifier = Modifier.align(Alignment.TopStart)) {
                         Text(name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(16.dp))
                         HorizontalDivider()
-
-                        listOf("Profile" to Icons.Filled.AccountCircle,
+                        listOf(
+                            "Profile" to Icons.Filled.AccountCircle,
                             "Calendar" to Icons.Filled.CalendarMonth,
-                            "Focus Timer" to Icons.Filled.Timer).forEach { (label, icon) ->
+                            "Focus Timer" to Icons.Filled.Timer
+                        ).forEach { (label, icon) ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { if (label == "Focus Timer") navController.navigate(Routes.FocusTimer) }
+                                    .clickable {
+                                        if (label == "Focus Timer") navController.navigate(Routes.FocusTimer)
+                                    }
                                     .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -162,7 +137,7 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                     title = { Text("Dashboard", fontWeight = FontWeight.Bold) },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Filled.Menu, contentDescription = "Hamburger Menu")
+                            Icon(Icons.Filled.Menu, contentDescription = "Menu")
                         }
                     }
                 )
@@ -204,6 +179,14 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                                     Text(task.title, fontWeight = FontWeight.Bold)
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text("Due: ${task.dueDate}", style = MaterialTheme.typography.bodyMedium)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text("${(task.percentComplete * 100).toInt()}% Complete", style = MaterialTheme.typography.labelSmall)
+                                    LinearProgressIndicator(
+                                        progress = task.percentComplete,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(6.dp)
+                                    )
                                 }
                             }
                             Spacer(modifier = Modifier.height(10.dp))
@@ -227,7 +210,6 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                                         singleLine = true,
                                         modifier = Modifier.fillMaxWidth()
                                     )
-
                                     Spacer(modifier = Modifier.height(8.dp))
 
                                     val interactionSource = remember { MutableInteractionSource() }
@@ -276,9 +258,7 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                                             .document(userId)
                                             .collection("tasks")
                                             .add(newTask)
-                                            .addOnSuccessListener {
-                                                loadTasks()
-                                            }
+                                            .addOnSuccessListener { loadTasks() }
                                         taskText = ""
                                         dueDateText = ""
                                     }
