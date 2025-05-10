@@ -10,6 +10,7 @@ import androidx.navigation.navArgument
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.neu.classmate.components.FocusTimer
+import com.neu.classmate.components.Profile
 import com.neu.classmate.components.TaskView
 import com.neu.classmate.screens.AuthScreen
 import com.neu.classmate.screens.HomeScreen
@@ -54,6 +55,9 @@ fun AppNavigation(modifier: Modifier = Modifier){
             val dueDate = backStackEntry.arguments?.getString("dueDate") ?: ""
 
             TaskView(taskId = taskId, title = title, dueDate = dueDate, navController = navController)
+        }
+        composable(Routes.Profile) {
+            Profile(modifier, navController)
         }
     }
 }

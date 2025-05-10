@@ -7,4 +7,5 @@ object Routes {
    var HomeScreen = "home"
    var TaskView = "taskview"
    var FocusTimer = "pokus"
+   var Profile = "profile"
 }
