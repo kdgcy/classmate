@@ -11,14 +11,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import kotlinx.coroutines.launch
 
 // Data model
 data class Subtask(val title: String, val done: Boolean = false)
@@ -34,10 +39,18 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
     var showDeleteDialog by remember { mutableStateOf(false) }
     var newSubtask by remember { mutableStateOf("") }
     val subtasks = remember { mutableStateListOf<Subtask>() }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val view = LocalView.current
+    val density = LocalDensity.current
+    val scope = rememberCoroutineScope()
+
+    val imeBottomPadding = with(density) {
+        val insets = ViewCompat.getRootWindowInsets(view)?.getInsets(WindowInsetsCompat.Type.ime())
+        insets?.bottom?.toDp() ?: 0.dp
+    }
 
     var listenerRegistration: ListenerRegistration? = remember { null }
 
-    // Real-time listener with null-safety
     LaunchedEffect(Unit) {
         listenerRegistration?.remove()
         listenerRegistration = db.collection("users")
@@ -60,7 +73,6 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
         onDispose { listenerRegistration?.remove() }
     }
 
-    // Reactive progress calculation
     val progress by remember(subtasks) {
         derivedStateOf {
             if (subtasks.isNotEmpty()) subtasks.count { it.done } / subtasks.size.toFloat() else 0f
@@ -82,6 +94,16 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
     }
 
     Scaffold(
+        snackbarHost = {
+            Box(modifier = Modifier.fillMaxSize()) {
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = imeBottomPadding + 8.dp)
+                )
+            }
+        },
         topBar = {
             TopAppBar(
                 title = { Text("Task View") },
@@ -96,9 +118,7 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
                                 showMenu = false
                                 showSubtaskInput = true
                             },
-                            leadingIcon = {
-                                Icon(Icons.Filled.Add, contentDescription = "Add")
-                            }
+                            leadingIcon = { Icon(Icons.Filled.Add, contentDescription = "Add") }
                         )
                         DropdownMenuItem(
                             text = { Text("Delete Task") },
@@ -106,9 +126,7 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
                                 showMenu = false
                                 showDeleteDialog = true
                             },
-                            leadingIcon = {
-                                Icon(Icons.Filled.Delete, contentDescription = "Trash")
-                            }
+                            leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = "Trash") }
                         )
                     }
                 }
@@ -153,6 +171,9 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
                                     val updated = subtasks.toList() + Subtask(newSubtask, false)
                                     updateSubtasks(updated)
                                     newSubtask = ""
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Subtask added successfully")
+                                    }
                                 }
                             }) {
                                 Icon(Icons.Default.Add, contentDescription = "Add")
@@ -217,7 +238,6 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
                     }
                 }
 
-                // 🚨 Add this block to make Delete Task work
                 if (showDeleteDialog) {
                     AlertDialog(
                         onDismissRequest = { showDeleteDialog = false },

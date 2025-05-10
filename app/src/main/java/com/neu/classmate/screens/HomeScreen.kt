@@ -98,8 +98,8 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        if (label == "Focus Timer") navController.navigate(Routes.FocusTimer)
                                         if (label == "Profile") navController.navigate(Routes.Profile)
+                                        if (label == "Focus Timer") navController.navigate(Routes.FocusTimer)
                                     }
                                     .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically
