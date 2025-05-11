@@ -65,7 +65,6 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                     val total = subtasks.size
                     val completed = subtasks.count { it["done"] == true }
                     val percentComplete = if (total > 0) completed.toFloat() / total else 0f
-
                     TaskItem(doc.id, title, dueDate, percentComplete)
                 }
             }
@@ -92,7 +91,8 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                         listOf(
                             "Profile" to Icons.Filled.AccountCircle,
                             "Calendar" to Icons.Filled.CalendarMonth,
-                            "Focus Timer" to Icons.Filled.Timer
+                            "Focus Timer" to Icons.Filled.Timer,
+                            "Task Completed" to Icons.Filled.CheckCircle
                         ).forEach { (label, icon) ->
                             Row(
                                 modifier = Modifier
@@ -100,6 +100,7 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                                     .clickable {
                                         if (label == "Profile") navController.navigate(Routes.Profile)
                                         if (label == "Focus Timer") navController.navigate(Routes.FocusTimer)
+                                        if (label == "Task Completed") navController.navigate(Routes.TaskCompleted)
                                     }
                                     .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -108,8 +109,6 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Text(label)
                             }
-
-
                         }
                     }
 
@@ -183,7 +182,15 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text("Due: ${task.dueDate}", style = MaterialTheme.typography.bodyMedium)
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    Text("${(task.percentComplete * 100).toInt()}% Complete", style = MaterialTheme.typography.labelSmall)
+
+                                    val progressPercent = (task.percentComplete * 100).toInt()
+                                    val progressLabel = if (progressPercent < 100) "In-progress" else "Complete"
+
+                                    Text(
+                                        "$progressPercent% - $progressLabel",
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
                                     LinearProgressIndicator(
                                         progress = task.percentComplete,
                                         modifier = Modifier

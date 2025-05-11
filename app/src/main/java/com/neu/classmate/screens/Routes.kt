@@ -8,4 +8,5 @@ object Routes {
    var TaskView = "taskview"
    var FocusTimer = "pokus"
    var Profile = "profile"
+   var TaskCompleted = "taskcom"
 }
