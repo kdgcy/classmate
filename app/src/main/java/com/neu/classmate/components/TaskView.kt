@@ -1,6 +1,7 @@
 package com.neu.classmate.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -11,21 +12,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
-import kotlinx.coroutines.launch
 
-// Data model
 data class Subtask(val title: String, val done: Boolean = false)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,15 +34,6 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
     var showDeleteDialog by remember { mutableStateOf(false) }
     var newSubtask by remember { mutableStateOf("") }
     val subtasks = remember { mutableStateListOf<Subtask>() }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val view = LocalView.current
-    val density = LocalDensity.current
-    val scope = rememberCoroutineScope()
-
-    val imeBottomPadding = with(density) {
-        val insets = ViewCompat.getRootWindowInsets(view)?.getInsets(WindowInsetsCompat.Type.ime())
-        insets?.bottom?.toDp() ?: 0.dp
-    }
 
     var listenerRegistration: ListenerRegistration? = remember { null }
 
@@ -94,16 +80,6 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
     }
 
     Scaffold(
-        snackbarHost = {
-            Box(modifier = Modifier.fillMaxSize()) {
-                SnackbarHost(
-                    hostState = snackbarHostState,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = imeBottomPadding + 8.dp)
-                )
-            }
-        },
         topBar = {
             TopAppBar(
                 title = { Text("Task View") },
@@ -126,82 +102,84 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
                                 showMenu = false
                                 showDeleteDialog = true
                             },
-                            leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = "Trash") }
+                            leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = "Delete") }
                         )
                     }
                 }
             )
         },
         content = { innerPadding ->
-            Column(
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
                     .padding(16.dp)
             ) {
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Task Title") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                OutlinedTextField(
-                    value = dueDate,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Due Date") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                if (showSubtaskInput) {
+                item {
                     OutlinedTextField(
-                        value = newSubtask,
-                        onValueChange = { newSubtask = it },
-                        label = { Text("New Subtask") },
-                        singleLine = true,
-                        trailingIcon = {
-                            IconButton(onClick = {
-                                if (newSubtask.isNotBlank()) {
-                                    val updated = subtasks.toList() + Subtask(newSubtask, false)
-                                    updateSubtasks(updated)
-                                    newSubtask = ""
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("Subtask added successfully")
-                                    }
-                                }
-                            }) {
-                                Icon(Icons.Default.Add, contentDescription = "Add")
-                            }
-                        },
-                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                        value = title,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Task Title") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    OutlinedTextField(
+                        value = dueDate,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Due Date") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(20.dp))
                 }
 
-                if (subtasks.isNotEmpty()) {
-                    Text("${(progress * 100).toInt()}% Complete", style = MaterialTheme.typography.labelLarge)
-                    LinearProgressIndicator(
-                        progress = { progress },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                } else {
-                    Text(
-                        text = "No subtasks yet.",
-                        modifier = Modifier.alpha(0.6f),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
+                if (showSubtaskInput) {
+                    item {
+                        OutlinedTextField(
+                            value = newSubtask,
+                            onValueChange = { newSubtask = it },
+                            label = { Text("New Subtask") },
+                            singleLine = true,
+                            trailingIcon = {
+                                IconButton(onClick = {
+                                    if (newSubtask.isNotBlank()) {
+                                        val updated = subtasks.toList() + Subtask(newSubtask, false)
+                                        updateSubtasks(updated)
+                                        newSubtask = ""
+                                    }
+                                }) {
+                                    Icon(Icons.Default.Add, contentDescription = "Add")
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
+                    }
                 }
 
-                subtasks.forEachIndexed { index, subtask ->
+                if (subtasks.isNotEmpty()) {
+                    item {
+                        Text("${(progress * 100).toInt()}% Complete", style = MaterialTheme.typography.labelLarge)
+                        LinearProgressIndicator(
+                            progress = { progress },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                } else {
+                    item {
+                        Text(
+                            text = "No subtasks yet.",
+                            modifier = Modifier.alpha(0.6f),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+
+                itemsIndexed(subtasks) { index, subtask ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -239,31 +217,33 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
                 }
 
                 if (showDeleteDialog) {
-                    AlertDialog(
-                        onDismissRequest = { showDeleteDialog = false },
-                        title = { Text("Delete Task?") },
-                        text = { Text("Are you sure you want to permanently delete this task?") },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                showDeleteDialog = false
-                                db.collection("users")
-                                    .document(userId)
-                                    .collection("tasks")
-                                    .document(taskId)
-                                    .delete()
-                                    .addOnSuccessListener {
-                                        navController.popBackStack()
-                                    }
-                            }) {
-                                Text("Delete")
+                    item {
+                        AlertDialog(
+                            onDismissRequest = { showDeleteDialog = false },
+                            title = { Text("Delete Task?") },
+                            text = { Text("Are you sure you want to permanently delete this task?") },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    showDeleteDialog = false
+                                    db.collection("users")
+                                        .document(userId)
+                                        .collection("tasks")
+                                        .document(taskId)
+                                        .delete()
+                                        .addOnSuccessListener {
+                                            navController.popBackStack()
+                                        }
+                                }) {
+                                    Text("Delete")
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showDeleteDialog = false }) {
+                                    Text("Cancel")
+                                }
                             }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showDeleteDialog = false }) {
-                                Text("Cancel")
-                            }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
