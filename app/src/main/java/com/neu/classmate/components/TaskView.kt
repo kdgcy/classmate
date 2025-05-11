@@ -21,6 +21,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 
+// Data model
 data class Subtask(val title: String, val done: Boolean = false)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -161,7 +162,10 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
 
                 if (subtasks.isNotEmpty()) {
                     item {
-                        Text("${(progress * 100).toInt()}% Complete", style = MaterialTheme.typography.labelLarge)
+                        val progressPercent = (progress * 100).toInt()
+                        val progressLabel = if (progressPercent < 100) "In-progress" else "Complete"
+
+                        Text("$progressPercent% - $progressLabel", style = MaterialTheme.typography.labelLarge)
                         LinearProgressIndicator(
                             progress = { progress },
                             modifier = Modifier.fillMaxWidth()
