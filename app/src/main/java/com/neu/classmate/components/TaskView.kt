@@ -1,17 +1,18 @@
 package com.neu.classmate.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.*
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
@@ -34,6 +35,8 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
     var showSubtaskInput by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var newSubtask by remember { mutableStateOf("") }
+    var taskTitle by remember { mutableStateOf(title) }
+    var isTitleEditing by remember { mutableStateOf(false) }
     val subtasks = remember { mutableStateListOf<Subtask>() }
 
     var listenerRegistration: ListenerRegistration? = remember { null }
@@ -75,13 +78,14 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
             .collection("tasks")
             .document(taskId)
             .update(mapOf(
+                "title" to taskTitle,
                 "subtasks" to data,
                 "progress" to progressMap
             ))
 
         if (newList.isNotEmpty() && newList.all { it.done }) {
             val taskData = hashMapOf(
-                "title" to title,
+                "title" to taskTitle,
                 "dueDate" to dueDate,
                 "subtasks" to data,
                 "progress" to progressMap
@@ -143,10 +147,26 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
             ) {
                 item {
                     OutlinedTextField(
-                        value = title,
-                        onValueChange = {},
-                        readOnly = true,
+                        value = taskTitle,
+                        onValueChange = {
+                            taskTitle = it
+                            isTitleEditing = true
+                        },
                         label = { Text("Task Title") },
+                        trailingIcon = {
+                            if (isTitleEditing && taskTitle.isNotBlank()) {
+                                IconButton(onClick = {
+                                    db.collection("users")
+                                        .document(userId)
+                                        .collection("tasks")
+                                        .document(taskId)
+                                        .update("title", taskTitle)
+                                    isTitleEditing = false
+                                }) {
+                                    Icon(Icons.Default.Check, contentDescription = "Save Task Title")
+                                }
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(10.dp))
@@ -168,20 +188,19 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
                             label = { Text("New Subtask") },
                             singleLine = true,
                             trailingIcon = {
-                                IconButton(onClick = {
-                                    if (newSubtask.isNotBlank()) {
+                                if (newSubtask.isNotBlank()) {
+                                    IconButton(onClick = {
                                         val updated = subtasks.toList() + Subtask(newSubtask, false)
                                         updateSubtasks(updated)
                                         newSubtask = ""
+                                    }) {
+                                        Icon(Icons.Default.Check, contentDescription = "Add Subtask")
                                     }
-                                }) {
-                                    Icon(Icons.Default.Add, contentDescription = "Add")
                                 }
                             },
-                            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
                             modifier = Modifier.fillMaxWidth()
                         )
-                        Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
 
@@ -191,19 +210,21 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
                         val progressLabel = if (progressPercent < 100) "In-progress" else "Complete"
 
                         Text("$progressPercent% - $progressLabel", style = MaterialTheme.typography.labelLarge)
+                        Spacer(modifier = Modifier.height(4.dp))
                         LinearProgressIndicator(
                             progress = { progress },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp)
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                    }
-                } else {
-                    item {
-                        Spacer(modifier = Modifier.height(30.dp))
                     }
                 }
 
                 itemsIndexed(subtasks) { index, subtask ->
+                    var isEditing by remember { mutableStateOf(false) }
+                    var editedText by remember { mutableStateOf(subtask.title) }
+
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -223,13 +244,36 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
                                 }
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = subtask.title,
-                                style = TextStyle(
-                                    textDecoration = if (subtask.done) TextDecoration.LineThrough else TextDecoration.None
-                                ),
-                                modifier = Modifier.weight(1f)
-                            )
+
+                            if (isEditing) {
+                                OutlinedTextField(
+                                    value = editedText,
+                                    onValueChange = { editedText = it },
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(onClick = {
+                                    if (editedText.isNotBlank()) {
+                                        val updated = subtasks.toMutableList()
+                                        updated[index] = updated[index].copy(title = editedText)
+                                        updateSubtasks(updated)
+                                        isEditing = false
+                                    }
+                                }) {
+                                    Icon(Icons.Default.Check, contentDescription = "Save")
+                                }
+                            } else {
+                                Text(
+                                    text = subtask.title,
+                                    style = TextStyle(
+                                        textDecoration = if (subtask.done) TextDecoration.LineThrough else TextDecoration.None
+                                    ),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { isEditing = true }
+                                )
+                            }
+
                             IconButton(onClick = {
                                 val updated = subtasks.toMutableList().apply { removeAt(index) }
                                 updateSubtasks(updated)
@@ -239,7 +283,6 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
                         }
                     }
                 }
-
                 if (showDeleteDialog) {
                     item {
                         AlertDialog(
