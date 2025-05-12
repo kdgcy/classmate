@@ -19,7 +19,7 @@ fun Profile(modifier: Modifier, navController: NavController){
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "User Profile"
+            text = "This screen is under development"
         )
     }
 }

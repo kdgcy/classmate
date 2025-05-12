@@ -38,7 +38,7 @@ fun AppNavigation(modifier: Modifier = Modifier){
             Signup(modifier,navController)
         }
         composable(Routes.HomeScreen) {
-            HomeScreen(modifier,navController)
+            HomeScreen(navController)
         }
         composable(Routes.FocusTimer) {
             FocusTimer(modifier,navController)

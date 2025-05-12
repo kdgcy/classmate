@@ -17,7 +17,7 @@ fun FocusTimer(modifier: Modifier, navHostController: NavHostController){
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Focus Timer Page"
+            text = "This screen is under development"
         )
     }
 }
