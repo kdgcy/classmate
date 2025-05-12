@@ -1,3 +1,5 @@
+// ✅ UPDATED TaskView.kt with auto-move to completedTasks when 100% complete
+
 package com.neu.classmate.components
 
 import androidx.compose.foundation.layout.*
@@ -78,6 +80,32 @@ fun TaskView(taskId: String, title: String, dueDate: String, navController: NavC
                 "subtasks" to data,
                 "progress" to progressMap
             ))
+
+        // Auto-move to completedTasks if done
+        if (newList.isNotEmpty() && newList.all { it.done }) {
+            val taskData = hashMapOf(
+                "title" to title,
+                "dueDate" to dueDate,
+                "subtasks" to data,
+                "progress" to progressMap
+            )
+
+            db.collection("users")
+                .document(userId)
+                .collection("completedTasks")
+                .document(taskId)
+                .set(taskData)
+                .addOnSuccessListener {
+                    db.collection("users")
+                        .document(userId)
+                        .collection("tasks")
+                        .document(taskId)
+                        .delete()
+                        .addOnSuccessListener {
+                            navController.popBackStack()
+                        }
+                }
+        }
     }
 
     Scaffold(
