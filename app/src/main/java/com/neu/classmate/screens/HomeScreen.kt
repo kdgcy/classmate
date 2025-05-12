@@ -1,6 +1,7 @@
 package com.neu.classmate.screens
 
 import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -35,7 +36,7 @@ data class TaskItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) {
+fun HomeScreen(navController: NavHostController) {
     val db = Firebase.firestore
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
@@ -43,29 +44,32 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
     var showDialog by remember { mutableStateOf(false) }
     var taskText by remember { mutableStateOf("") }
     var dueDateText by remember { mutableStateOf("") }
+    var dueTimeText by remember { mutableStateOf("") }
     var taskList by remember { mutableStateOf(listOf<TaskItem>()) }
 
     val calendar = Calendar.getInstance()
+    val timeCalendar = Calendar.getInstance()
     val dateFormatter = remember { SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()) }
     val context = LocalContext.current
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    fun loadTasks() {
+    fun listenToTasks() {
         db.collection("users")
             .document(userId)
             .collection("tasks")
             .orderBy("dueDateTimestamp")
-            .get()
-            .addOnSuccessListener { result ->
-                taskList = result.documents.mapNotNull { doc ->
-                    val title = doc.getString("title") ?: return@mapNotNull null
-                    val dueDate = doc.getString("dueDate") ?: "No due date"
-                    val subtasks = doc.get("subtasks") as? List<Map<String, Any>> ?: emptyList()
-                    val total = subtasks.size
-                    val completed = subtasks.count { it["done"] == true }
-                    val percentComplete = if (total > 0) completed.toFloat() / total else 0f
-                    TaskItem(doc.id, title, dueDate, percentComplete)
+            .addSnapshotListener { result, _ ->
+                if (result != null) {
+                    taskList = result.documents.mapNotNull { doc ->
+                        val title = doc.getString("title") ?: return@mapNotNull null
+                        val dueDate = doc.getString("dueDate") ?: "No due date"
+                        val subtasks = doc.get("subtasks") as? List<Map<String, Any>> ?: emptyList()
+                        val total = subtasks.size
+                        val completed = subtasks.count { it["done"] == true }
+                        val percentComplete = if (total > 0) completed.toFloat() / total else 0f
+                        TaskItem(doc.id, title, dueDate, percentComplete)
+                    }
                 }
             }
     }
@@ -77,7 +81,7 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
             .addOnSuccessListener { document ->
                 name = document.getString("name") ?: ""
             }
-        loadTasks()
+        listenToTasks()
     }
 
     ModalNavigationDrawer(
@@ -98,9 +102,11 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        if (label == "Profile") navController.navigate(Routes.Profile)
-                                        if (label == "Focus Timer") navController.navigate(Routes.FocusTimer)
-                                        if (label == "Task Completed") navController.navigate(Routes.TaskCompleted)
+                                        when (label) {
+                                            "Profile" -> navController.navigate(Routes.Profile)
+                                            "Focus Timer" -> navController.navigate(Routes.FocusTimer)
+                                            "Task Completed" -> navController.navigate(Routes.TaskCompleted)
+                                        }
                                     }
                                     .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -184,19 +190,21 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                                     Spacer(modifier = Modifier.height(4.dp))
 
                                     val progressPercent = (task.percentComplete * 100).toInt()
-                                    val progressLabel = if (progressPercent < 100) "In-progress" else "Complete"
+                                    val showProgress = task.percentComplete > 0f
 
-                                    Text(
-                                        "$progressPercent% - $progressLabel",
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    LinearProgressIndicator(
-                                        progress = task.percentComplete,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(6.dp)
-                                    )
+                                    if (showProgress) {
+                                        val progressLabel = if (progressPercent < 100) "In-progress" else "Complete"
+                                        Text("$progressPercent% - $progressLabel", style = MaterialTheme.typography.labelSmall)
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        LinearProgressIndicator(
+                                            progress = task.percentComplete,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(6.dp)
+                                        )
+                                    } else {
+                                        Spacer(modifier = Modifier.height(20.dp))
+                                    }
                                 }
                             }
                             Spacer(modifier = Modifier.height(10.dp))
@@ -209,6 +217,7 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                                 showDialog = false
                                 taskText = ""
                                 dueDateText = ""
+                                dueTimeText = ""
                             },
                             title = { Text("Add New Task") },
                             text = {
@@ -252,15 +261,47 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                                             modifier = Modifier.fillMaxWidth()
                                         )
                                     }
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable(
+                                                indication = null,
+                                                interactionSource = interactionSource
+                                            ) {
+                                                TimePickerDialog(
+                                                    context,
+                                                    { _, hour, minute ->
+                                                        timeCalendar.set(Calendar.HOUR_OF_DAY, hour)
+                                                        timeCalendar.set(Calendar.MINUTE, minute)
+                                                        dueTimeText = String.format("%02d:%02d", hour, minute)
+                                                    },
+                                                    timeCalendar.get(Calendar.HOUR_OF_DAY),
+                                                    timeCalendar.get(Calendar.MINUTE),
+                                                    false
+                                                ).show()
+                                            }
+                                    ) {
+                                        OutlinedTextField(
+                                            value = dueTimeText,
+                                            onValueChange = {},
+                                            label = { Text("Select due time") },
+                                            readOnly = true,
+                                            enabled = false,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
                                 }
                             },
                             confirmButton = {
                                 TextButton(onClick = {
                                     showDialog = false
-                                    if (taskText.isNotBlank()) {
+                                    if (taskText.isNotBlank() && dueDateText.isNotBlank() && dueTimeText.isNotBlank()) {
                                         val newTask = hashMapOf(
                                             "title" to taskText,
-                                            "dueDate" to dueDateText,
+                                            "dueDate" to "$dueDateText $dueTimeText",
                                             "dueDateTimestamp" to calendar.time,
                                             "createdAt" to com.google.firebase.Timestamp.now()
                                         )
@@ -268,9 +309,9 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                                             .document(userId)
                                             .collection("tasks")
                                             .add(newTask)
-                                            .addOnSuccessListener { loadTasks() }
                                         taskText = ""
                                         dueDateText = ""
+                                        dueTimeText = ""
                                     }
                                 }) {
                                     Text("Add")
@@ -281,6 +322,7 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavHostController) 
                                     showDialog = false
                                     taskText = ""
                                     dueDateText = ""
+                                    dueTimeText = ""
                                 }) {
                                     Text("Cancel")
                                 }
