@@ -2,6 +2,7 @@ package com.neu.classmate
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -19,10 +20,13 @@ import com.neu.classmate.screens.HomeScreen
 import com.neu.classmate.screens.Login
 import com.neu.classmate.screens.Routes
 import com.neu.classmate.screens.Signup
+import com.neu.classmate.viewmodel.FocusTimerViewModel
 
 @Composable
 fun AppNavigation(modifier: Modifier = Modifier){
     val navController = rememberNavController()
+
+    val focusTimerViewModel: FocusTimerViewModel = viewModel()
 
     val isLoggedIn = Firebase.auth.currentUser != null
 
@@ -42,7 +46,7 @@ fun AppNavigation(modifier: Modifier = Modifier){
             HomeScreen(navController)
         }
         composable(Routes.FocusTimer) {
-            FocusTimer(modifier,navController)
+            FocusTimer(modifier, navController, focusTimerViewModel)
         }
         composable(
             "task_view/{taskId}/{title}/{dueDate}",
