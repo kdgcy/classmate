@@ -32,21 +32,26 @@ class FocusTimerViewModel : ViewModel() {
                 delay(1000)
                 _timeLeft.value -= 1
             }
+
             if (_timeLeft.value == 0 && _isRunning.value) {
+                _isRunning.value = false  // Stop current session
+
                 if (_isBreak.value) {
                     if (_cycleCount.value < 4) {
                         _cycleCount.value += 1
                         _timeLeft.value = 25 * 60
                         _isBreak.value = false
-                        startTimer()
                     } else {
-                        _isRunning.value = false
+                        // All cycles complete
+                        return@launch
                     }
                 } else {
                     _timeLeft.value = 5 * 60
                     _isBreak.value = true
-                    startTimer()
                 }
+
+                // Restart for the next session
+                startTimer()
             }
         }
     }
