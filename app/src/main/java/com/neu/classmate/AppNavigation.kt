@@ -11,6 +11,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.neu.classmate.components.FocusTimer
 import com.neu.classmate.components.Profile
+import com.neu.classmate.components.Reminder
 import com.neu.classmate.components.TaskCompleted
 import com.neu.classmate.components.TaskView
 import com.neu.classmate.screens.AuthScreen
@@ -61,7 +62,10 @@ fun AppNavigation(modifier: Modifier = Modifier){
             Profile(modifier, navController)
         }
         composable(Routes.TaskCompleted) {
-            TaskCompleted()
+            TaskCompleted(navController)
+        }
+        composable(Routes.Reminder) {
+            Reminder(navController)
         }
     }
 }
