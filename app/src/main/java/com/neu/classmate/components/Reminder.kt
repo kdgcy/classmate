@@ -39,6 +39,9 @@ fun Reminder(navController: NavController) {
     var selectedDate by remember { mutableStateOf("") }
     var selectedTime by remember { mutableStateOf("") }
     var reminderList by remember { mutableStateOf(listOf<ReminderItem>()) }
+    var editingReminderId by remember { mutableStateOf<String?>(null) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var reminderToDeleteId by remember { mutableStateOf<String?>(null) }
 
     val calendar = Calendar.getInstance()
     val context = LocalContext.current
@@ -93,7 +96,10 @@ fun Reminder(navController: NavController) {
                     .padding(16.dp)
             ) {
                 Button(
-                    onClick = { showDialog = true },
+                    onClick = {
+                        showDialog = true
+                        editingReminderId = null
+                    },
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
                         .fillMaxWidth(0.75f)
@@ -110,10 +116,20 @@ fun Reminder(navController: NavController) {
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 4.dp),
+                                .padding(vertical = 4.dp)
+                                .clickable {
+                                    reminderTitle = reminder.title
+                                    selectedDate = reminder.date
+                                    selectedTime = reminder.time
+                                    editingReminderId = reminder.id
+                                    showDialog = true
+                                },
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                         ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
+                            Column(
+                                modifier = Modifier
+                                    .padding(16.dp)
+                            ) {
                                 Text(
                                     text = reminder.title.ifBlank { "Untitled Reminder" },
                                     fontWeight = FontWeight.Bold
@@ -121,6 +137,15 @@ fun Reminder(navController: NavController) {
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text("Date: ${reminder.date}", fontSize = 12.sp)
                                 Text("Time: ${reminder.time}", fontSize = 12.sp)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Delete",
+                                    color = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.clickable {
+                                        reminderToDeleteId = reminder.id
+                                        showDeleteDialog = true
+                                    }
+                                )
                             }
                         }
                     }
@@ -133,6 +158,7 @@ fun Reminder(navController: NavController) {
                             reminderTitle = ""
                             selectedDate = ""
                             selectedTime = ""
+                            editingReminderId = null
                         },
                         title = { Text("Set Reminder") },
                         text = {
@@ -140,7 +166,7 @@ fun Reminder(navController: NavController) {
                                 OutlinedTextField(
                                     value = reminderTitle,
                                     onValueChange = { reminderTitle = it },
-                                    label = { Text("Title")},
+                                    label = { Text("Title") },
                                     modifier = Modifier.fillMaxWidth()
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -211,16 +237,22 @@ fun Reminder(navController: NavController) {
                                         "createdAt" to com.google.firebase.Timestamp.now()
                                     )
 
-                                    db.collection("users")
+                                    val reminderRef = db.collection("users")
                                         .document(userId)
                                         .collection("reminders")
-                                        .add(reminderData)
+
+                                    if (editingReminderId != null) {
+                                        reminderRef.document(editingReminderId!!).set(reminderData)
+                                    } else {
+                                        reminderRef.add(reminderData)
+                                    }
                                 }
 
                                 showDialog = false
                                 reminderTitle = ""
                                 selectedDate = ""
                                 selectedTime = ""
+                                editingReminderId = null
                             }) {
                                 Text("Save")
                             }
@@ -231,6 +263,40 @@ fun Reminder(navController: NavController) {
                                 reminderTitle = ""
                                 selectedDate = ""
                                 selectedTime = ""
+                                editingReminderId = null
+                            }) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
+                }
+
+                if (showDeleteDialog && userId != null && reminderToDeleteId != null) {
+                    AlertDialog(
+                        onDismissRequest = {
+                            showDeleteDialog = false
+                            reminderToDeleteId = null
+                        },
+                        title = { Text("Delete Reminder") },
+                        text = { Text("Are you sure you want to delete this reminder?") },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                db.collection("users")
+                                    .document(userId)
+                                    .collection("reminders")
+                                    .document(reminderToDeleteId!!)
+                                    .delete()
+
+                                showDeleteDialog = false
+                                reminderToDeleteId = null
+                            }) {
+                                Text("Delete")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = {
+                                showDeleteDialog = false
+                                reminderToDeleteId = null
                             }) {
                                 Text("Cancel")
                             }
