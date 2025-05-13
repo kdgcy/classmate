@@ -95,6 +95,7 @@ fun HomeScreen(navController: NavHostController) {
                         listOf(
                             "Profile" to Icons.Filled.AccountCircle,
                             "Calendar" to Icons.Filled.CalendarMonth,
+                            "Reminder" to Icons.Filled.AlarmOn,
                             "Focus Timer" to Icons.Filled.Timer,
                             "Task Completed" to Icons.Filled.CheckCircle
                         ).forEach { (label, icon) ->
@@ -106,6 +107,7 @@ fun HomeScreen(navController: NavHostController) {
                                             "Profile" -> navController.navigate(Routes.Profile)
                                             "Focus Timer" -> navController.navigate(Routes.FocusTimer)
                                             "Task Completed" -> navController.navigate(Routes.TaskCompleted)
+                                            "Reminder" -> navController.navigate(Routes.Reminder)
                                         }
                                     }
                                     .padding(16.dp),

@@ -9,4 +9,5 @@ object Routes {
    var FocusTimer = "pokus"
    var Profile = "profile"
    var TaskCompleted = "taskcom"
+   var Reminder = "reminder"
 }

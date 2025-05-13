@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -12,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -23,7 +25,7 @@ data class CompletedTask(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TaskCompleted() {
+fun TaskCompleted(navController: NavController) {
     val db = FirebaseFirestore.getInstance()
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
     var completedTasks by remember { mutableStateOf(listOf<CompletedTask>()) }
@@ -49,6 +51,11 @@ fun TaskCompleted() {
         topBar = {
             TopAppBar(
                 title = { Text("Completed Tasks") },
+                navigationIcon = {
+                    IconButton(onClick = {navController.popBackStack()}) {
+                        Icon(imageVector = Icons.Default.ArrowBackIosNew, contentDescription = "Arrow back")
+                    }
+                },
                 actions = {
                     IconButton(onClick = { showMenu = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "Menu")
