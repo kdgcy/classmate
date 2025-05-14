@@ -52,6 +52,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.firebase.auth)//this dep is for authentication
     implementation(libs.firebase.firestore)//for storing
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4")
     implementation("com.google.firebase:firebase-messaging:24.1.1")//FCM
     implementation("androidx.work:work-runtime-ktx:2.9.0")//WorkManager
     testImplementation(libs.junit)
