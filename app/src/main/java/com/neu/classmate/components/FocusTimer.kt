@@ -1,6 +1,7 @@
 package com.neu.classmate.components
 
 
+import FocusTimerViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
@@ -8,11 +9,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.neu.classmate.viewmodel.FocusTimerViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -21,11 +23,12 @@ fun FocusTimer(
     navController: NavController,
     focusTimerViewModel: FocusTimerViewModel
 ) {
-    val viewModel = focusTimerViewModel
-    val timeLeft by viewModel.timeLeft.collectAsState()
-    val isRunning by viewModel.isRunning.collectAsState()
-    val isBreak by viewModel.isBreak.collectAsState()
-    val cycleCount by viewModel.cycleCount.collectAsState()
+    val context = LocalContext.current
+
+    val timeLeft by focusTimerViewModel.timeLeft.collectAsStateWithLifecycle()
+    val isRunning by focusTimerViewModel.isRunning.collectAsStateWithLifecycle()
+    val isBreak by focusTimerViewModel.isBreak.collectAsStateWithLifecycle()
+    val cycleCount by focusTimerViewModel.cycleCount.collectAsStateWithLifecycle()
 
     val minutes = timeLeft / 60
     val seconds = timeLeft % 60
@@ -71,7 +74,7 @@ fun FocusTimer(
 
                 Row(horizontalArrangement = Arrangement.SpaceEvenly) {
                     Button(
-                        onClick = { viewModel.startTimer() },
+                        onClick = { focusTimerViewModel.startTimer(context) },
                         enabled = !isRunning,
                         modifier = Modifier.padding(horizontal = 8.dp)
                     ) {
@@ -79,7 +82,7 @@ fun FocusTimer(
                     }
 
                     Button(
-                        onClick = { viewModel.pauseTimer() },
+                        onClick = { focusTimerViewModel.pauseTimer() },
                         enabled = isRunning,
                         modifier = Modifier.padding(horizontal = 8.dp)
                     ) {
@@ -87,7 +90,7 @@ fun FocusTimer(
                     }
 
                     Button(
-                        onClick = { viewModel.resetTimer() },
+                        onClick = { focusTimerViewModel.resetTimer() },
                         modifier = Modifier.padding(horizontal = 8.dp)
                     ) {
                         Text("Reset")

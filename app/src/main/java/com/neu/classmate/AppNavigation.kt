@@ -1,5 +1,6 @@
 package com.neu.classmate
 
+import FocusTimerViewModel
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -20,7 +21,6 @@ import com.neu.classmate.screens.HomeScreen
 import com.neu.classmate.screens.Login
 import com.neu.classmate.screens.Routes
 import com.neu.classmate.screens.Signup
-import com.neu.classmate.viewmodel.FocusTimerViewModel
 
 @Composable
 fun AppNavigation(modifier: Modifier = Modifier){
