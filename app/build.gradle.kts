@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.firebase.auth)//this dep is for authentication
     implementation(libs.firebase.firestore)//for storing
     implementation("com.google.firebase:firebase-messaging:24.1.1")//FCM
+    implementation("androidx.work:work-runtime-ktx:2.9.0")//WorkManager
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
