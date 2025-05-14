@@ -6,41 +6,53 @@ import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 import com.neu.classmate.model.UserModel
 
-class AuthViewModel: ViewModel() {
+class AuthViewModel : ViewModel() {
     private val auth = Firebase.auth
-
     private val firestore = Firebase.firestore
 
-    fun login(email: String, password: String, onResult : (Boolean, String?)-> Unit ){
-        auth.signInWithEmailAndPassword(email,password)
+    fun login(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
+        auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener {
-                if(it.isSuccessful){
-                    onResult(true,null)
-                }else{
-                    onResult(false,it.exception?.localizedMessage)
+                if (it.isSuccessful) {
+                    onResult(true, null)
+                } else {
+                    onResult(false, it.exception?.localizedMessage)
                 }
-
             }
     }
 
-    fun signup(email : String, name : String, password : String, onResult : (Boolean, String?)-> Unit ){
-        auth.createUserWithEmailAndPassword(email,password)
+    fun signup(
+        email: String,
+        username: String,
+        firstName: String,
+        lastName: String,
+        password: String,
+        onResult: (Boolean, String?) -> Unit
+    ) {
+        auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener {
-                if(it.isSuccessful){
-                    var userId = it.result?.user?.uid
-                    val userModel = UserModel(name, email, userId!!)
+                if (it.isSuccessful) {
+                    val userId = it.result?.user?.uid
+                    val userModel = UserModel(
+                        username = username,
+                        firstName = firstName,
+                        lastName = lastName,
+                        email = email,
+                        uid = userId!!
+                    )
 
-                    firestore.collection("users").document(userId)
+                    firestore.collection("users")
+                        .document(userId)
                         .set(userModel)
                         .addOnCompleteListener { dbTask ->
-                            if(dbTask.isSuccessful){
-                                onResult(true,null)
-                            }else{
-                                onResult(false,"Something went wrong")
+                            if (dbTask.isSuccessful) {
+                                onResult(true, null)
+                            } else {
+                                onResult(false, dbTask.exception?.localizedMessage)
                             }
                         }
-                }else {
-                    onResult(false,it.exception?.localizedMessage)
+                } else {
+                    onResult(false, it.exception?.localizedMessage)
                 }
             }
     }

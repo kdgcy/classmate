@@ -29,95 +29,78 @@ import com.neu.classmate.AppUtil
 import com.neu.classmate.viewmodel.AuthViewModel
 
 @Composable
-fun Login(modifier: Modifier = Modifier, navController: NavHostController, authViewModel: AuthViewModel = viewModel()){
-
-    var email by remember {
-        mutableStateOf("")
-    }
-
-    var password by remember {
-        mutableStateOf("")
-    }
-
-    var isLoading by remember {
-        mutableStateOf(false)
-    }
-
-    var context = LocalContext.current
+fun Login(
+    modifier: Modifier = Modifier,
+    navController: NavHostController,
+    authViewModel: AuthViewModel = viewModel()
+) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     Column(
-        modifier = modifier.fillMaxSize().padding(31.dp),
+        modifier = modifier
+            .fillMaxSize()
+            .padding(31.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = "Welcome back!",
             modifier = Modifier.fillMaxWidth(),
-            style = TextStyle(
-                fontSize = 32.sp,
-                fontWeight = FontWeight.W700
-            )
+            style = TextStyle(fontSize = 32.sp, fontWeight = FontWeight.W700)
         )
 
         Text(
-            text = "Login your account",
+            text = "Login to your account",
             modifier = Modifier.fillMaxWidth(),
-            style = TextStyle(
-                fontSize = 18.sp,
-                fontWeight = FontWeight.W700
-            )
+            style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.W700)
         )
 
-        Spacer(modifier= Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         OutlinedTextField(
             value = email,
-            onValueChange = {
-                email = it
-            },
-            label = {
-                Text(text = "Email")
-            },
+            onValueChange = { email = it },
+            label = { Text("Email") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
-
-        Spacer(modifier= Modifier.height(10.dp))
-
-        OutlinedTextField(
-            value = password,
-            onValueChange = {
-                password = it
-            },
-            label = {
-                Text(text = "Password")
-            },
-            modifier = Modifier.fillMaxWidth(),
-            visualTransformation = PasswordVisualTransformation(),
             singleLine = true
         )
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        Button(onClick = {
-            isLoading = true
-            authViewModel.login(email, password){success,errorMessage->
-                if(success){
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Button(
+            onClick = {
+                isLoading = true
+                authViewModel.login(email, password) { success, errorMessage ->
                     isLoading = false
-                    navController.navigate(Routes.HomeScreen){
-                        popUpTo(Routes.AuthScreen){inclusive=true}
+                    if (success) {
+                        navController.navigate(Routes.HomeScreen) {
+                            popUpTo(Routes.AuthScreen) { inclusive = true }
+                        }
+                    } else {
+                        AppUtil.showToast(context, errorMessage ?: "Something went wrong")
                     }
-                }else{
-                    isLoading = false
-                    AppUtil.showToast(context,errorMessage?:"Something went wrong")
                 }
-            }
-        },
+            },
             enabled = !isLoading,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(60.dp)) {
-            Text(text = if(isLoading)"Logging in" else "Login")
+                .height(60.dp)
+        ) {
+            Text(if (isLoading) "Logging in..." else "Login")
         }
     }
 }

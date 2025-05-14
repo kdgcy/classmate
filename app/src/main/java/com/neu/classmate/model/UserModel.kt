@@ -1,7 +1,9 @@
 package com.neu.classmate.model
 
 data class UserModel(
-    val name: String,
-    val email: String,
-    val uid: String
+    val username: String = "",
+    val firstName: String = "",
+    val lastName: String = "",
+    val email: String = "",
+    val uid: String = ""
 )
