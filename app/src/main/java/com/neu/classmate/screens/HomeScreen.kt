@@ -2,6 +2,7 @@ package com.neu.classmate.screens
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.Context
 import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -26,6 +27,10 @@ import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+
+import androidx.work.*
+import com.neu.classmate.model.ReminderWorker
+import java.util.concurrent.TimeUnit
 
 data class TaskItem(
     val id: String,
@@ -81,6 +86,9 @@ fun HomeScreen(navController: NavHostController) {
             .addOnSuccessListener { document ->
                 name = document.getString("name") ?: ""
             }
+
+        scheduleReminderWorker(context = context) // This line schedules the daily check
+
         listenToTasks()
     }
 
@@ -335,4 +343,16 @@ fun HomeScreen(navController: NavHostController) {
             }
         )
     }
+}
+
+fun scheduleReminderWorker(context: Context) {
+    val workRequest = PeriodicWorkRequestBuilder<ReminderWorker>(1, TimeUnit.DAYS)
+        .setInitialDelay(1, TimeUnit.MINUTES) // Optional: slight delay before first run
+        .build()
+
+    WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+        "DailyReminderWorker",
+        ExistingPeriodicWorkPolicy.KEEP,
+        workRequest
+    )
 }

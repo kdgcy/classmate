@@ -13,7 +13,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Log.d("FCM", "New token: $token")
-        // You can send this token to Firestore if needed
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
@@ -32,7 +31,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val channelId = "reminder_channel"
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
-        // Create notification channel (Android 8+)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
@@ -45,7 +43,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         }
 
         val notification = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // Replace with your app icon if needed
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(title)
             .setContentText(body)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
