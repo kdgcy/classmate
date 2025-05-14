@@ -17,8 +17,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -45,7 +48,8 @@ fun HomeScreen(navController: NavHostController) {
     val db = Firebase.firestore
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
-    var name by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var showDialog by remember { mutableStateOf(false) }
     var taskText by remember { mutableStateOf("") }
     var dueDateText by remember { mutableStateOf("") }
@@ -84,7 +88,8 @@ fun HomeScreen(navController: NavHostController) {
             .document(userId)
             .get()
             .addOnSuccessListener { document ->
-                name = document.getString("name") ?: ""
+                username = document.getString("username") ?: ""
+                email = document.getString("email") ?: ""
             }
 
         scheduleReminderWorker(context = context) // This line schedules the daily check
@@ -98,8 +103,21 @@ fun HomeScreen(navController: NavHostController) {
             ModalDrawerSheet(modifier = Modifier.fillMaxWidth(0.7f)) {
                 Box(modifier = Modifier.fillMaxHeight()) {
                     Column(modifier = Modifier.align(Alignment.TopStart)) {
-                        Text(name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(16.dp))
+                        Column(modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp)) {
+                            Text(
+                                text = "@$username",
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                            Text(
+                                text = email,
+                                style = TextStyle(fontStyle = FontStyle.Italic, fontSize = 12.sp)
+                            )
+                        }
+
                         HorizontalDivider()
+
                         listOf(
                             "Profile" to Icons.Filled.AccountCircle,
                             "Calendar" to Icons.Filled.CalendarMonth,
@@ -127,6 +145,7 @@ fun HomeScreen(navController: NavHostController) {
                             }
                         }
                     }
+
 
                     Row(
                         modifier = Modifier

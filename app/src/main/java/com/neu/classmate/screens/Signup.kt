@@ -29,25 +29,18 @@ import com.neu.classmate.AppUtil
 import com.neu.classmate.viewmodel.AuthViewModel
 
 @Composable
-fun Signup(modifier: Modifier = Modifier, navController: NavHostController,authViewModel: AuthViewModel = viewModel()) {
-
-    var email by remember {
-        mutableStateOf("")
-    }
-
-    var name by remember {
-        mutableStateOf("")
-    }
-
-    var password by remember {
-        mutableStateOf("")
-    }
-
-    var isLoading by remember {
-        mutableStateOf(false)
-    }
-
-    var context = LocalContext.current
+fun Signup(
+    modifier: Modifier = Modifier,
+    navController: NavHostController,
+    authViewModel: AuthViewModel = viewModel()
+) {
+    var username by remember { mutableStateOf("") }
+    var firstName by remember { mutableStateOf("") }
+    var lastName by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     Column(
         modifier = modifier.fillMaxSize().padding(31.dp),
@@ -57,85 +50,94 @@ fun Signup(modifier: Modifier = Modifier, navController: NavHostController,authV
         Text(
             text = "Hi there,",
             modifier = Modifier.fillMaxWidth(),
-            style = TextStyle(
-                fontSize = 32.sp,
-                fontWeight = FontWeight.W700
-            )
+            style = TextStyle(fontSize = 32.sp, fontWeight = FontWeight.W700)
         )
 
         Text(
             text = "Register your account",
             modifier = Modifier.fillMaxWidth(),
-            style = TextStyle(
-                fontSize = 18.sp,
-                fontWeight = FontWeight.W700
-            )
+            style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.W700)
         )
 
-        Spacer(modifier= Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         OutlinedTextField(
-            value = email,
-            onValueChange = {
-                email = it
-            },
-            label = {
-                Text(text = "Full name")
-            },
+            value = username,
+            onValueChange = { username = it },
+            label = { Text("@Username") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
-
-        Spacer(modifier= Modifier.height(10.dp))
-
-        OutlinedTextField(
-            value = name,
-            onValueChange = {
-                name = it
-            },
-            label = {
-                Text(text = "Email")
-            },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
-
-        Spacer(modifier= Modifier.height(10.dp))
-
-        OutlinedTextField(
-            value = password,
-            onValueChange = {
-                password = it
-            },
-            label = {
-                Text(text = "Password")
-            },
-            modifier = Modifier.fillMaxWidth(),
-            visualTransformation = PasswordVisualTransformation(),
             singleLine = true
         )
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        Button(onClick = {
-            isLoading = true
-            authViewModel.signup(name, email, password){success,errorMessage->
-                if(success){
+        OutlinedTextField(
+            value = firstName,
+            onValueChange = { firstName = it },
+            label = { Text("First name") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        OutlinedTextField(
+            value = lastName,
+            onValueChange = { lastName = it },
+            label = { Text("Last name") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Button(
+            onClick = {
+                isLoading = true
+                authViewModel.signup(
+                    email,
+                    username,
+                    firstName,
+                    lastName,
+                    password
+                ) { success, errorMessage ->
                     isLoading = false
-                    navController.navigate(Routes.HomeScreen){
-                        popUpTo(Routes.AuthScreen){inclusive=true}
+                    if (success) {
+                        navController.navigate(Routes.HomeScreen) {
+                            popUpTo(Routes.AuthScreen) { inclusive = true }
+                        }
+                    } else {
+                        AppUtil.showToast(context, errorMessage ?: "Something went wrong")
                     }
-                }else{
-                    isLoading = false
-                    AppUtil.showToast(context,errorMessage?:"Something went wrong")
                 }
-            }
-        },
+            },
             enabled = !isLoading,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(60.dp)) {
-            Text(text = if(isLoading)"Creating Accouont" else "Sign up")
+                .height(60.dp)
+        ) {
+            Text(text = if (isLoading) "Creating Account..." else "Sign up")
         }
     }
 }
