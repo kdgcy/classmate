@@ -49,6 +49,7 @@ fun Profile(modifier: Modifier = Modifier, navController: NavController) {
     var showPasswordPrompt by remember { mutableStateOf(false) }
     var passwordInput by remember { mutableStateOf("") }
     var isDeleting by remember { mutableStateOf(false) }
+    var passwordError by remember { mutableStateOf<String?>(null) }
 
     var profileImageUrl by remember { mutableStateOf<String?>(null) }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
@@ -235,7 +236,9 @@ fun Profile(modifier: Modifier = Modifier, navController: NavController) {
                         visualTransformation = PasswordVisualTransformation(),
                         singleLine = true
                     )
-
+                    passwordError?.let {
+                        Text(it, color = Color.Red, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
+                    }
                     if (isDeleting) {
                         Spacer(modifier = Modifier.height(12.dp))
                         CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
@@ -245,12 +248,19 @@ fun Profile(modifier: Modifier = Modifier, navController: NavController) {
             confirmButton = {
                 TextButton(
                     onClick = {
+                        if (passwordInput.isBlank()) {
+                            passwordError = "Please input password to confirm"
+                            return@TextButton
+                        }
+
                         isDeleting = true
+                        passwordError = null
                         deleteAccount(userId, passwordInput, email, navController) { success ->
                             isDeleting = false
-                            showPasswordPrompt = false
-                            if (!success) {
-                                // Optional: handle error
+                            if (success) {
+                                showPasswordPrompt = false
+                            } else {
+                                passwordError = "Incorrect password, try again"
                             }
                         }
                     },
@@ -258,7 +268,8 @@ fun Profile(modifier: Modifier = Modifier, navController: NavController) {
                 ) {
                     Text("Delete", color = Color.Red)
                 }
-            },
+            }
+            ,
             dismissButton = {
                 TextButton(onClick = { showPasswordPrompt = false }, enabled = !isDeleting) {
                     Text("Cancel")
