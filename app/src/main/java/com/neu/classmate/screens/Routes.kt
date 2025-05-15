@@ -10,4 +10,5 @@ object Routes {
    var Profile = "profile"
    var TaskCompleted = "taskcom"
    var Reminder = "reminder"
+   var SplashScreen = "splash"
 }
