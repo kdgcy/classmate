@@ -20,19 +20,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.TextFieldValue
-import com.google.firebase.auth.EmailAuthProvider
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,6 +46,9 @@ fun Profile(modifier: Modifier = Modifier, navController: NavController) {
     var isSaving by remember { mutableStateOf(false) }
     var showValidationError by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showPasswordPrompt by remember { mutableStateOf(false) }
+    var passwordInput by remember { mutableStateOf("") }
+    var isDeleting by remember { mutableStateOf(false) }
 
     var profileImageUrl by remember { mutableStateOf<String?>(null) }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
@@ -56,8 +57,6 @@ fun Profile(modifier: Modifier = Modifier, navController: NavController) {
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
-
-
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -201,10 +200,6 @@ fun Profile(modifier: Modifier = Modifier, navController: NavController) {
         }
     )
 
-    var showPasswordDialog by remember { mutableStateOf(false) }
-    var passwordInput by remember { mutableStateOf(TextFieldValue("")) }
-    var authError by remember { mutableStateOf<String?>(null) }
-
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
@@ -213,9 +208,9 @@ fun Profile(modifier: Modifier = Modifier, navController: NavController) {
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteConfirm = false
-                    showPasswordDialog = true
+                    showPasswordPrompt = true
                 }) {
-                    Text("Proceed")
+                    Text("Proceed", color = Color.Red)
                 }
             },
             dismissButton = {
@@ -226,14 +221,13 @@ fun Profile(modifier: Modifier = Modifier, navController: NavController) {
         )
     }
 
-    if (showPasswordDialog) {
+    if (showPasswordPrompt) {
         AlertDialog(
-            onDismissRequest = { showPasswordDialog = false },
-            title = { Text("Re-authenticate") },
+            onDismissRequest = { showPasswordPrompt = false },
+            title = { Text("Confirm Password") },
             text = {
                 Column {
                     Text("Please enter your password to confirm account deletion.")
-                    Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = passwordInput,
                         onValueChange = { passwordInput = it },
@@ -241,56 +235,70 @@ fun Profile(modifier: Modifier = Modifier, navController: NavController) {
                         visualTransformation = PasswordVisualTransformation(),
                         singleLine = true
                     )
-                    if (authError != null) {
-                        Text(text = authError!!, color = Color.Red, fontSize = 12.sp)
+
+                    if (isDeleting) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
                     }
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
-                    scope.launch {
-                        try {
-                            val user = FirebaseAuth.getInstance().currentUser
-                            val credential = EmailAuthProvider.getCredential(user?.email ?: "", passwordInput.text)
-                            user?.reauthenticate(credential)?.await()
-
-                            deleteAccount(userId, navController)
-                        } catch (e: Exception) {
-                            authError = "Invalid password. Please try again."
-                            Log.e("DeleteAccount", "Re-authentication failed", e)
+                TextButton(
+                    onClick = {
+                        isDeleting = true
+                        deleteAccount(userId, passwordInput, email, navController) { success ->
+                            isDeleting = false
+                            showPasswordPrompt = false
+                            if (!success) {
+                                // Optional: handle error
+                            }
                         }
-                    }
-                }) {
-                    Text("Confirm", color = Color.Red)
+                    },
+                    enabled = !isDeleting
+                ) {
+                    Text("Delete", color = Color.Red)
                 }
             },
             dismissButton = {
-                TextButton(onClick = {
-                    showPasswordDialog = false
-                    passwordInput = TextFieldValue("")
-                    authError = null
-                }) {
+                TextButton(onClick = { showPasswordPrompt = false }, enabled = !isDeleting) {
                     Text("Cancel")
                 }
             }
         )
     }
-
 }
 
-fun deleteAccount(userId: String, navController: NavController) {
+fun deleteAccount(
+    userId: String,
+    password: String,
+    email: String,
+    navController: NavController,
+    onComplete: (Boolean) -> Unit
+) {
     val user = FirebaseAuth.getInstance().currentUser
     val db = FirebaseFirestore.getInstance()
+    val storage = FirebaseStorage.getInstance().reference.child("profileImages/$userId.jpg")
 
-    user?.delete()
+    val credential = EmailAuthProvider.getCredential(email, password)
+
+    user?.reauthenticate(credential)
         ?.addOnSuccessListener {
-            db.collection("users").document(userId).delete()
-            FirebaseStorage.getInstance().reference.child("profileImages/$userId.jpg").delete()
-            navController.navigate("auth") {
-                popUpTo("home") { inclusive = true }
-            }
+            user.delete()
+                .addOnSuccessListener {
+                    db.collection("users").document(userId).delete()
+                    storage.delete()
+                    navController.navigate("auth") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                    onComplete(true)
+                }
+                .addOnFailureListener {
+                    Log.e("DeleteAccount", "Account deletion failed", it)
+                    onComplete(false)
+                }
         }
         ?.addOnFailureListener {
-            Log.e("DeleteAccount", "Failed to delete user", it)
+            Log.e("DeleteAccount", "Re-authentication failed", it)
+            onComplete(false)
         }
 }
