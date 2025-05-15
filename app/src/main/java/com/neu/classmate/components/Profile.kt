@@ -6,37 +6,14 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,6 +43,7 @@ fun Profile(modifier: Modifier = Modifier, navController: NavController) {
     var isEditMode by remember { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
     var showValidationError by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     var profileImageUrl by remember { mutableStateOf<String?>(null) }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
@@ -117,6 +95,7 @@ fun Profile(modifier: Modifier = Modifier, navController: NavController) {
                             text = { Text("Delete Account") },
                             onClick = {
                                 expanded = false
+                                showDeleteConfirm = true
                             }
                         )
                     }
@@ -153,38 +132,13 @@ fun Profile(modifier: Modifier = Modifier, navController: NavController) {
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
-
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
-                    label = { Text("@Username") },
-                    singleLine = true,
-                    enabled = isEditMode
-                )
+                OutlinedTextField(value = username, onValueChange = { username = it }, label = { Text("@Username") }, singleLine = true, enabled = isEditMode)
                 Spacer(modifier = Modifier.height(10.dp))
-                OutlinedTextField(
-                    value = firstName,
-                    onValueChange = { firstName = it },
-                    label = { Text("First name") },
-                    singleLine = true,
-                    enabled = isEditMode
-                )
+                OutlinedTextField(value = firstName, onValueChange = { firstName = it }, label = { Text("First name") }, singleLine = true, enabled = isEditMode)
                 Spacer(modifier = Modifier.height(10.dp))
-                OutlinedTextField(
-                    value = lastName,
-                    onValueChange = { lastName = it },
-                    label = { Text("Last name") },
-                    singleLine = true,
-                    enabled = isEditMode
-                )
+                OutlinedTextField(value = lastName, onValueChange = { lastName = it }, label = { Text("Last name") }, singleLine = true, enabled = isEditMode)
                 Spacer(modifier = Modifier.height(10.dp))
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    singleLine = true,
-                    enabled = isEditMode
-                )
+                OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, singleLine = true, enabled = isEditMode)
 
                 if (showValidationError) {
                     Text("All fields are required.", color = Color.Red, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp))
@@ -192,7 +146,6 @@ fun Profile(modifier: Modifier = Modifier, navController: NavController) {
 
                 if (isEditMode) {
                     Spacer(modifier = Modifier.height(24.dp))
-
                     Button(
                         onClick = {
                             if (username.isBlank() || firstName.isBlank() || lastName.isBlank() || email.isBlank()) {
@@ -213,17 +166,12 @@ fun Profile(modifier: Modifier = Modifier, navController: NavController) {
 
                                 try {
                                     if (selectedImageUri != null) {
-                                        val storageRef = FirebaseStorage.getInstance().reference
-                                            .child("profileImages/$userId.jpg")
-
+                                        val storageRef = FirebaseStorage.getInstance().reference.child("profileImages/$userId.jpg")
                                         val uploadTask = storageRef.putFile(selectedImageUri!!)
                                         val uri = uploadTask.continueWithTask { task ->
-                                            if (!task.isSuccessful) {
-                                                throw task.exception ?: Exception("Upload failed")
-                                            }
+                                            if (!task.isSuccessful) throw task.exception ?: Exception("Upload failed")
                                             storageRef.downloadUrl
                                         }.await()
-
                                         updatedData["profileImageUrl"] = uri.toString()
                                     }
 
@@ -238,7 +186,7 @@ fun Profile(modifier: Modifier = Modifier, navController: NavController) {
                             }
                         },
                         enabled = !isSaving,
-                        modifier = Modifier.fillMaxWidth(0.80F)
+                        modifier = Modifier.fillMaxWidth(0.80f)
                     ) {
                         Text(if (isSaving) "Saving..." else "Save Changes")
                     }
@@ -246,4 +194,42 @@ fun Profile(modifier: Modifier = Modifier, navController: NavController) {
             }
         }
     )
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Delete Account") },
+            text = { Text("Are you sure you want to permanently delete your account? This cannot be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteConfirm = false
+                    deleteAccount(userId, navController)
+                }) {
+                    Text("Yes, Delete", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+
+fun deleteAccount(userId: String, navController: NavController) {
+    val user = FirebaseAuth.getInstance().currentUser
+    val db = FirebaseFirestore.getInstance()
+
+    user?.delete()
+        ?.addOnSuccessListener {
+            db.collection("users").document(userId).delete()
+            FirebaseStorage.getInstance().reference.child("profileImages/$userId.jpg").delete()
+            navController.navigate("auth") {
+                popUpTo("home") { inclusive = true }
+            }
+        }
+        ?.addOnFailureListener {
+            Log.e("DeleteAccount", "Failed to delete user", it)
+        }
 }
