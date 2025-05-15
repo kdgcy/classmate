@@ -21,8 +21,13 @@ import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.text.font.FontWeight
+
 @Composable
 fun SplashScreen(navController: NavController) {
+    val isDarkMode = isSystemInDarkTheme()
+
     LaunchedEffect(Unit) {
         delay(2000L)
         val user = FirebaseAuth.getInstance().currentUser
@@ -38,23 +43,24 @@ fun SplashScreen(navController: NavController) {
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
                 Icons.Default.School,
                 contentDescription = "App Logo",
-                tint = Color.White,
+                tint = if (isDarkMode) Color.White else Color.Black,
                 modifier = Modifier.size(100.dp)
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "ClassMate",
-                color = Color.White,
-                fontSize = 28.sp
+                color = if (isDarkMode) Color.White else Color.Black,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold
             )
         }
     }
 }
+
