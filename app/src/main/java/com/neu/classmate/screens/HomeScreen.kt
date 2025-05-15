@@ -120,7 +120,6 @@ fun HomeScreen(navController: NavHostController) {
 
                         listOf(
                             "Profile" to Icons.Filled.AccountCircle,
-                            "Calendar" to Icons.Filled.CalendarMonth,
                             "Reminder" to Icons.Filled.AlarmOn,
                             "Focus Timer" to Icons.Filled.Timer,
                             "Task Completed" to Icons.Filled.CheckCircle
