@@ -55,6 +55,11 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4")
     implementation("com.google.firebase:firebase-messaging:24.1.1")//FCM
     implementation("androidx.work:work-runtime-ktx:2.9.0")//WorkManager
+
+    implementation("com.google.firebase:firebase-storage-ktx:20.3.0")
+    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("androidx.activity:activity-compose:1.8.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
