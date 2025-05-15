@@ -21,6 +21,7 @@ import com.neu.classmate.screens.HomeScreen
 import com.neu.classmate.screens.Login
 import com.neu.classmate.screens.Routes
 import com.neu.classmate.screens.Signup
+import com.neu.classmate.screens.SplashScreen
 
 @Composable
 fun AppNavigation(modifier: Modifier = Modifier){
@@ -30,11 +31,14 @@ fun AppNavigation(modifier: Modifier = Modifier){
 
     val isLoggedIn = Firebase.auth.currentUser != null
 
-    val firstPage = if(isLoggedIn) Routes.HomeScreen else Routes.AuthScreen
+    val firstPage = if(isLoggedIn) Routes.SplashScreen else Routes.AuthScreen
 
     NavHost(navController = navController, startDestination = firstPage) {
         composable(Routes.AuthScreen) {
             AuthScreen(modifier,navController)
+        }
+        composable(Routes.SplashScreen) {
+            SplashScreen(navController)
         }
         composable(Routes.Login) {
             Login(modifier,navController)
