@@ -16,10 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.neu.classmate.R
 
@@ -29,16 +27,8 @@ fun AuthScreen(modifier: Modifier = Modifier, navController: NavHostController){
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally) {
         Image(
-            painter = painterResource(id = R.drawable.img_placeholder),
+            painter = painterResource(id = R.drawable.final_logo),
             contentDescription = "Logo"
-        )
-
-        Text(
-            text = "ClassMate",
-            style = TextStyle(
-                fontSize = 32.sp,
-                fontWeight = FontWeight.W700,
-            )
         )
 
         Text(
@@ -48,7 +38,7 @@ fun AuthScreen(modifier: Modifier = Modifier, navController: NavHostController){
             )
         )
 
-        Spacer(modifier = Modifier.height(72.dp))
+        Spacer(modifier = Modifier.height(28.dp))
 
         Button(onClick = {
             navController.navigate(Routes.Login)
